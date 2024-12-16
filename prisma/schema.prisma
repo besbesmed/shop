@@ -1,0 +1,165 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+// User model
+model User {
+  id              Int             @id @default(autoincrement())
+  nom             String
+  username        String          @unique
+  email           String          @unique
+  tlf             String?
+  adresse         String?
+  dateNaissance   DateTime?
+  password        String
+  role            Role            @default(USER)
+  createdAt       DateTime        @default(now())
+  updatedAt       DateTime        @updatedAt
+  produitsFavoris Produit[]       @relation("Favoris")
+  panier          Panier?
+  paiements       Paiement[]
+  reviews         Review[]
+  photo           String?
+  accounts        Account[]
+  sessions        Session[]
+}
+
+// Role enum
+enum Role {
+  USER
+  ADMIN
+}
+
+// Categorie model
+model Categorie {
+  id            Int             @id @default(autoincrement())
+  nom           String          @unique
+  sousCategories SousCategorie[]
+  photo         String?
+}
+
+// SousCategorie model
+model SousCategorie {
+  id              Int               @id @default(autoincrement())
+  nom             String            @unique
+  categorie       Categorie         @relation(fields: [categorieId], references: [id])
+  categorieId     Int
+  sousSousCategories SousSousCategorie[]
+  photo           String?
+}
+
+// SousSousCategorie model
+model SousSousCategorie {
+  id              Int             @id @default(autoincrement())
+  nom             String          @unique
+  sousCategorie   SousCategorie   @relation(fields: [sousCategorieId], references: [id])
+  sousCategorieId Int
+  produits        Produit[]
+  photo           String?
+}
+
+// Produit model
+model Produit {
+  id                Int               @id @default(autoincrement())
+  titre             String
+  description       String
+  prix              Decimal
+  photos            String[]
+  stock             Int
+  details           Json?
+  createdAt         DateTime          @default(now())
+  updatedAt         DateTime        @updatedAt
+  sousSousCategorie SousSousCategorie @relation(fields: [sousSousCategorieId], references: [id])
+  sousSousCategorieId Int
+  reviews           Review[]
+  favoriPar         User[]            @relation("Favoris")
+  panier            PanierProduit[]
+}
+
+// Review model
+model Review {
+  id        Int      @id @default(autoincrement())
+  user      User     @relation(fields: [userId], references: [id])
+  userId    Int
+  produit   Produit  @relation(fields: [produitId], references: [id])
+  produitId Int
+  commentaire String
+  note      Int
+  createdAt DateTime @default(now())
+}
+
+// Panier model
+model Panier {
+  id        Int             @id @default(autoincrement())
+  user      User            @relation(fields: [userId], references: [id])
+  userId    Int             @unique
+  produits  PanierProduit[]
+  createdAt DateTime        @default(now())
+  updatedAt DateTime        @updatedAt
+}
+
+// PanierProduit model
+model PanierProduit {
+  id        Int      @id @default(autoincrement())
+  panier    Panier   @relation(fields: [panierId], references: [id])
+  panierId  Int
+  produit   Produit  @relation(fields: [produitId], references: [id])
+  produitId Int
+  quantite  Int
+}
+
+// Paiement model
+model Paiement {
+  id            Int      @id @default(autoincrement())
+  user          User     @relation(fields: [userId], references: [id])
+  userId        Int
+  montant       Decimal
+  methode       String
+  statut        String
+  createdAt     DateTime @default(now())
+  transactionId String?
+}
+
+// Models required by next-auth
+model Account {
+  id                String  @id @default(cuid())
+  userId            Int
+  type              String
+  provider          String
+  providerAccountId String
+  refresh_token     String?
+  access_token      String?
+  expires_at        Int?
+  token_type        String?
+  scope             String?
+  id_token          String?
+  session_state     String?
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([provider, providerAccountId])
+}
+
+model Session {
+  id           String   @id @default(cuid())
+  sessionToken String   @unique
+  userId       Int
+  expires      DateTime
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model VerificationToken {
+  identifier String
+  token      String   @unique
+  expires    DateTime
+
+  @@unique([identifier, token])
+}

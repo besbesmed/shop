@@ -1,0 +1,14 @@
+/* globals.css */
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Styles par défaut (mode clair) */
+body {
+  @apply bg-white text-gray-900;
+}
+
+/* Styles pour le mode sombre */
+.dark body {
+  @apply bg-gray-800 text-gray-100;
+}
